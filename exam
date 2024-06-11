@@ -1,0 +1,223 @@
+#include <iostream> 
+#include <vector> 
+#include <cstdlib> 
+#include <ctime> 
+
+using namespace std;
+
+const int S = 10;
+const char P = '.';
+const char SH = 'S';
+const char H = 'X';
+const char M = 'O';
+
+
+typedef vector<vector<char>> Board;
+
+Board createBoard() {
+    return Board(S, vector<char>(S, P));
+}
+
+void displayBoard(const Board& board) {
+    cout << "  ";
+    for (int i = 0; i < S; i++) {
+        cout << i << " ";
+    }
+    cout << endl;
+
+    for (int i = 0; i < S; i++) {
+        cout << i << " ";
+        for (int j = 0; j < S; j++) {
+            cout << board[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+bool placeShip(Board& board, int x, int y, int length, char direction) {
+    if (direction == 'H') {
+        if (y + length > S) return false;
+        for (int i = 0; i < length; i++) {
+            if (board[x][y + i] != P) return false;
+        }
+        for (int i = 0; i < length; i++) {
+            board[x][y + i] = SH;
+        }
+    }
+    else if (direction == 'V') {
+        if (x + length > S) return false;
+        for (int i = 0; i < length; i++) {
+            if (board[x + i][y] != P) return false;
+        }
+        for (int i = 0; i < length; i++) {
+            board[x + i][y] = SH;
+        }
+    }
+    else {
+        return false;
+    }
+    return true;
+}
+
+bool attack(Board& board, int x, int y) {
+    if (board[x][y] == SH) {
+        board[x][y] = H;
+        return true;
+    }
+    else if (board[x][y] == P) {
+        board[x][y] = M;
+        return false;
+    }
+    return false;
+}
+
+bool allShipsSunk(const Board& board) {
+    for (int i = 0; i < S; i++) {
+        for (int j = 0; j < S; j++) {
+            if (board[i][j] == SH) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void placeShips(Board& board) {
+    int x, y, length;
+    char direction;
+    for (int i = 0; i < 5; i++) {
+        bool placed = false;
+        while (!placed) {
+            displayBoard(board);
+            cout << "Введите координаты (x y), длину и направление (H/V) для корабля " << i + 1 << ": ";
+            cin >> x >> y >> length >> direction;
+            placed = placeShip(board, x, y, length, direction);
+            if (!placed) {
+                cout << "Попробуйте снова, позиция была неверна" << endl;
+            }
+        }
+    }
+}
+
+void computerPlaceShips(Board& board) {
+    int x, y, length;
+    char direction;
+    for (int i = 0; i < 5; i++) {
+        bool placed = false;
+        while (!placed) {
+            x = rand() % S;
+            y = rand() % S;
+            length = rand() % 3 + 2; // Длина корабля от 2 до 4 
+            direction = rand() % 2 == 0 ? 'H' : 'V';
+            placed = placeShip(board, x, y, length, direction);
+        }
+    }
+}
+
+void playGame(Board& player1Board, Board& player2Board) {
+    int x, y;
+    while (true) {
+        displayBoard(player2Board);
+        cout << "Игрок 1, введите координаты для атаки (x y): ";
+        cin >> x >> y;
+        if (attack(player2Board, x, y)) {
+            cout << "Попадание!" << endl;
+        }
+        else {
+            cout << "Мимо!" << endl;
+        }
+        if (allShipsSunk(player2Board)) {
+            cout << "Игрок 1 выиграл!" << endl;
+            break;
+        }
+
+        displayBoard(player1Board);
+        cout << "Игрок 2, введите координаты для атаки (x y): ";
+        cin >> x >> y;
+        if (attack(player1Board, x, y)) {
+            cout << "Попадание!" << endl;
+        }
+        else {
+            cout << "Мимо!" << endl;
+        }
+        if (allShipsSunk(player1Board)) {
+            cout << "Игрок 2 выиграл!" << endl;
+            break;
+        }
+    }
+}
+
+void playGameWithComputer(Board& playerBoard, Board& computerBoard) {
+    int x, y;
+    while (true) {
+        displayBoard(computerBoard);
+        cout << "Игрок, введите координаты для атаки (x y): ";
+        cin >> x >> y;
+        if (attack(computerBoard, x, y)) {
+            cout << "Попадание!" << endl;
+        }
+        else {
+            cout << "Мимо!" << endl;
+        }
+        if (allShipsSunk(computerBoard)) {
+            cout << "Игрок выиграл!" << endl;
+            break;
+        }
+
+        x = rand() % S;
+        y = rand() % S;
+        if (attack(playerBoard, x, y)) {
+            cout << "Компьютер попал по координатам (" << x << ", " << y << ")!" << endl;
+        }
+        else {
+            cout << "Компьютер промахнулся по координатам (" << x << ", " << y << ")!" << endl;
+        }
+        if (allShipsSunk(playerBoard)) {
+            cout << "Компьютер выиграл!" << endl;
+            break;
+        }
+    }
+}
+
+int main() {
+    srand(time(0));
+    Board player1Board, player2Board;
+    int mode;
+    setlocale(LC_ALL, "Russian");
+
+    cout << "Выберите режим игры:" << endl;
+    cout << "1. Игрок против игрока" << endl;
+    cout << "2. Игрок против компьютера" << endl;
+    cout << "Введите ваш выбор: ";
+    cin >> mode;
+
+    if (mode == 1) {
+        player1Board = createBoard();
+        player2Board = createBoard();
+
+        cout << "Игрок 1, разместите ваши корабли." << endl;
+        placeShips(player1Board);
+
+        cout << "Игрок 2, разместите ваши корабли." << endl;
+        placeShips(player2Board);
+
+        playGame(player1Board, player2Board);
+    }
+    else if (mode == 2) {
+        player1Board = createBoard();
+        player2Board = createBoard();
+
+        cout << "Игрок, разместите ваши корабли." << endl;
+        placeShips(player1Board);
+
+        cout << "Компьютер размещает корабли..." << endl;
+        computerPlaceShips(player2Board);
+
+        playGameWithComputer(player1Board, player2Board);
+    }
+    else {
+        cout << "Выбран неверный режим!" << endl;
+    }
+
+    return 0;
+}
